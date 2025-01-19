@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"log"
 
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/config/db"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/config/logger"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/env"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/handler"
@@ -19,14 +21,34 @@ func SetupHTTP() {
 	logrus := logger.NewLogger()
 
 	cfg := Config{
-		addr:   env.GetEnv("ADDR_HTTP", ":4000"),
+		addr:   env.GetEnvString("ADDR_HTTP", ":4000"),
 		logger: logrus,
 		db: DBConfig{
-			DB_ADDR: "some address",
+			addr:         env.GetEnvString("DB_ADDR", ""),
+			maxOpenConns: env.GetEnvInt("DB_MAX_CONNS", 5),
+			maxIdleConns: env.GetEnvInt("DB_MAX_IDLE", 5),
+			maxIdleTime:  env.GetEnvString("DB_MAX_TIME_IDLE", "10m"),
 		},
 	}
 
-	handler := handler.NewHandler()
+	conn, err := db.New(
+		cfg.db.addr,
+		cfg.db.maxOpenConns,
+		cfg.db.maxIdleConns,
+		cfg.db.maxIdleTime,
+	)
+
+	if err != nil {
+		cfg.logger.Fatalf("failed to connected database :%v", err)
+	}
+
+	if err := conn.Ping(context.Background()); err != nil {
+		cfg.logger.Fatalf("failed to ping database :%v", err)
+	}
+
+	cfg.logger.Info("success connected to database")
+
+	handler := handler.NewHandler(conn)
 
 	app := application{
 		config:  cfg,

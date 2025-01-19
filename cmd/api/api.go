@@ -18,14 +18,21 @@ type Config struct {
 }
 
 type DBConfig struct {
-	DB_ADDR string
+	addr         string
+	maxOpenConns int
+	maxIdleConns int
+	maxIdleTime  string
 }
 
 func (app *application) mount() *fiber.App {
 	r := fiber.New()
 
-	r.Get("/health", app.handler.Health.CheckHealth)
+	v1 := r.Group("/v1")
+	v1.Get("/health", app.handler.Health.CheckHealth)
 
+	// authentication handler
+	auth := v1.Group("/authentication")
+	auth.Post("/register", app.handler.User.Register)
 	return r
 }
 
