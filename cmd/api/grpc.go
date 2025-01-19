@@ -21,7 +21,7 @@ func SetupGRPC() {
 	// set up logrus
 	logrus := logger.NewLogger()
 	cfg := Config{
-		addr:   env.GetEnv("ADDR_GRPC", ":5000"),
+		addr:   env.GetEnvString("ADDR_GRPC", ":5000"),
 		logger: logrus,
 	}
 
