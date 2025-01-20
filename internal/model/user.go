@@ -23,3 +23,17 @@ type UserPayload struct {
 func (u *UserPayload) Validate() error {
 	return Validate.Struct(u)
 }
+
+type UserLoginPayload struct {
+	Username string `json:"username" validate:"required,min=5,max=255"`
+	Password string `json:"password" validate:"required,min=5,max=255"`
+}
+
+func (u *UserLoginPayload) Validate() error {
+	return Validate.Struct(u)
+}
+
+type LoginResponse struct {
+	ActiveToken  string `json:"active_token"`
+	RefreshToken string `json:"refresh_token"`
+}

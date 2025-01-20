@@ -11,6 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteTokenByToken = `-- name: DeleteTokenByToken :exec
+DELETE FROM user_session WHERE token = $1
+`
+
+func (q *Queries) DeleteTokenByToken(ctx context.Context, token string) error {
+	_, err := q.db.Exec(ctx, deleteTokenByToken, token)
+	return err
+}
+
+const deleteTokenByUserID = `-- name: DeleteTokenByUserID :exec
+DELETE FROM user_session WHERE user_id = $1
+`
+
+func (q *Queries) DeleteTokenByUserID(ctx context.Context, userID int32) error {
+	_, err := q.db.Exec(ctx, deleteTokenByUserID, userID)
+	return err
+}
+
 const getTokenByToken = `-- name: GetTokenByToken :one
 SELECT id, user_id, token, refresh_token, token_expires_at, refresh_token_expires_at, created_at, updated_at
 FROM user_session
