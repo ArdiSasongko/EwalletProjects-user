@@ -1,40 +1,39 @@
 package api
 
 import (
-	"log"
 	"net"
 
-	"github.com/ArdiSasongko/EwalletProjects-user/internal/config/logger"
-	"github.com/ArdiSasongko/EwalletProjects-user/internal/env"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
+	protohandler "github.com/ArdiSasongko/EwalletProjects-user/internal/proto-handler"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/proto/token"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/storage/sqlc"
 
 	"google.golang.org/grpc"
-
-	"github.com/joho/godotenv"
 )
 
 func SetupGRPC() {
-	err := godotenv.Load()
+	app, err := SetupGRPCApplication()
 	if err != nil {
-		log.Fatal(err.Error())
+		app.config.logger.Fatalf("failed to setup application (grpc): %v", err)
 	}
 
-	// set up logrus
-	logrus := logger.NewLogger()
-	cfg := Config{
-		addr:   env.GetEnvString("ADDR_GRPC", ":5000"),
-		logger: logrus,
-	}
-
-	lis, err := net.Listen("tcp", cfg.addr)
+	lis, err := net.Listen("tcp", app.config.addrGRPC)
 	if err != nil {
-		cfg.logger.Fatalf("failed listen grpc port, err:%v", err)
+		app.config.logger.Fatalf("failed to listen grpc port, err: %v", err)
 	}
 
 	server := grpc.NewServer()
 
-	cfg.logger.Printf("grpc server has running, port:%v", cfg.addr)
+	db, _ := ConnectDatabase(app.config.db, app.config.logger)
+	auth := auth.NewJwt(app.config.auth.secret, app.config.auth.aud, app.config.auth.iss)
+
+	// register grpc
+	tokenHandler := protohandler.NewTokenService(sqlc.New(db), auth)
+	token.RegisterTokenServiceServer(server, tokenHandler)
+
+	app.config.logger.Printf("grpc server has running, port%v", app.config.addrGRPC)
 
 	if err := server.Serve(lis); err != nil {
-		cfg.logger.Fatalf("failed to starting grpc server, err:%v", err)
+		app.config.logger.Fatalf("failed to starting grpc server, err:%v", err)
 	}
 }

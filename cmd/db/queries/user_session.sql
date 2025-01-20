@@ -16,3 +16,6 @@ DELETE FROM user_session WHERE token = $1;
 
 -- name: DeleteTokenByUserID :exec
 DELETE FROM user_session WHERE user_id = $1;
+
+-- name: UpdateToken :exec
+UPDATE user_session SET token = $1, token_expires_at = $2, updated_at = now() WHERE user_id = $3 AND refresh_token = $4;
