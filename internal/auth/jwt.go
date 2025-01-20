@@ -8,8 +8,8 @@ import (
 )
 
 var TokenTime = map[string]time.Duration{
-	"active_token":  time.Minute * 30,
-	"refresh_token": time.Hour * 24 * 7,
+	"active_token":  time.Minute * 1,
+	"refresh_token": time.Minute * 2,
 }
 
 type Authenticator interface {

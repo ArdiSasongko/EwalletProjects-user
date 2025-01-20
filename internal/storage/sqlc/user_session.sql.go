@@ -95,3 +95,24 @@ func (q *Queries) InsertToken(ctx context.Context, arg InsertTokenParams) error 
 	)
 	return err
 }
+
+const updateToken = `-- name: UpdateToken :exec
+UPDATE user_session SET token = $1, token_expires_at = $2, updated_at = now() WHERE user_id = $3 AND refresh_token = $4
+`
+
+type UpdateTokenParams struct {
+	Token          string
+	TokenExpiresAt pgtype.Timestamp
+	UserID         int32
+	RefreshToken   string
+}
+
+func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
+	_, err := q.db.Exec(ctx, updateToken,
+		arg.Token,
+		arg.TokenExpiresAt,
+		arg.UserID,
+		arg.RefreshToken,
+	)
+	return err
+}

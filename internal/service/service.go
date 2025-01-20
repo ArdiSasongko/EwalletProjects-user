@@ -14,6 +14,7 @@ type Service struct {
 		GetUser(context.Context, model.UserLoginPayload) (*model.LoginResponse, error)
 		GetUserByID(context.Context, int32) (*sqlc.User, error)
 		DeleteTokenByID(context.Context, int32) error
+		RefreshToken(context.Context, *sqlc.User) (*model.LoginResponse, error)
 	}
 }
 

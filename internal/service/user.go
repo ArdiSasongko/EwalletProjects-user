@@ -119,3 +119,45 @@ func (s *UserService) DeleteTokenByID(ctx context.Context, id int32) error {
 
 	return nil
 }
+
+func (s *UserService) RefreshToken(ctx context.Context, user *sqlc.User) (*model.LoginResponse, error) {
+	token, err := s.q.GetTokenByUserID(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenExpired := token.RefreshTokenExpiresAt.Time.Truncate(time.Second)
+	now := time.Now().Truncate(time.Second).UTC().Add(time.Hour * 7)
+
+	if now.After(refreshTokenExpired) {
+		if err := s.q.DeleteTokenByToken(ctx, token.Token); err != nil {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf("token has expired, please login again")
+	}
+
+	newToken, err := s.auth.GenerateToken(user.ID, "active_token")
+	if err != nil {
+		return nil, err
+	}
+
+	updateToken := sqlc.UpdateTokenParams{
+		Token: newToken,
+		TokenExpiresAt: pgtype.Timestamp{
+			Time:  time.Now().Add(auth.TokenTime["active_token"]),
+			Valid: true,
+		},
+		UserID:       user.ID,
+		RefreshToken: token.RefreshToken,
+	}
+
+	if err := s.q.UpdateToken(ctx, updateToken); err != nil {
+		return nil, err
+	}
+
+	return &model.LoginResponse{
+		ActiveToken:  newToken,
+		RefreshToken: token.RefreshToken,
+	}, nil
+}

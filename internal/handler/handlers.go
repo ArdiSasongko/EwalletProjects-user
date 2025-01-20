@@ -15,9 +15,11 @@ type Handlers struct {
 		Register(*fiber.Ctx) error
 		Login(*fiber.Ctx) error
 		Logout(*fiber.Ctx) error
+		RefreshToken(*fiber.Ctx) error
 	}
 	Middleware interface {
-		AuthMiddleware(*fiber.Ctx) error
+		AuthMiddleware() fiber.Handler
+		RefreshTokenMiddleware() fiber.Handler
 	}
 }
 

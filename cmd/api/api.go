@@ -12,10 +12,11 @@ type application struct {
 }
 
 type Config struct {
-	addr   string
-	logger *logrus.Logger
-	db     DBConfig
-	auth   AuthConfig
+	addrHTTP string
+	addrGRPC string
+	logger   *logrus.Logger
+	db       DBConfig
+	auth     AuthConfig
 }
 
 type DBConfig struct {
@@ -41,11 +42,16 @@ func (app *application) mount() *fiber.App {
 	auth := v1.Group("/authentication")
 	auth.Post("/register", app.handler.User.Register)
 	auth.Post("/login", app.handler.User.Login)
-	auth.Delete("/logout", app.handler.Middleware.AuthMiddleware, app.handler.User.Logout)
+
+	// with auth middleware
+	auth.Delete("/logout", app.handler.Middleware.AuthMiddleware(), app.handler.User.Logout)
+
+	// with refresh middleware
+	auth.Put("/refresh", app.handler.Middleware.RefreshTokenMiddleware(), app.handler.User.RefreshToken)
 	return r
 }
 
 func (app *application) run(r *fiber.App) error {
-	app.config.logger.Printf("http server has running, port:%v", app.config.addr)
-	return r.Listen(app.config.addr)
+	app.config.logger.Printf("http server has running, port%v", app.config.addrHTTP)
+	return r.Listen(app.config.addrHTTP)
 }

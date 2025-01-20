@@ -92,3 +92,20 @@ func (h *UserHandler) Logout(ctx *fiber.Ctx) error {
 		"message": "ok",
 	})
 }
+
+func (h *UserHandler) RefreshToken(ctx *fiber.Ctx) error {
+	user := ctx.Locals("user").(*sqlc.User)
+
+	token, err := h.s.User.RefreshToken(ctx.Context(), user)
+	if err != nil {
+		log.WithError(err).Errorf("intenal server error, method: %v, path: %v", ctx.Method(), ctx.Path())
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "ok",
+		"data":    token,
+	})
+}
