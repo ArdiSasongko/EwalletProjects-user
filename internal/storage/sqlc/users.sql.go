@@ -12,7 +12,7 @@ import (
 )
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, phone_number, address, dob, fullname, created_at, updated_at
+SELECT id, username, email, phone_number, address, dob, fullname, password, created_at, updated_at
 FROM users
 WHERE id = $1
 `
@@ -25,6 +25,7 @@ type GetUserByIDRow struct {
 	Address     string
 	Dob         pgtype.Date
 	Fullname    string
+	Password    string
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
 }
@@ -40,6 +41,44 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, er
 		&i.Address,
 		&i.Dob,
 		&i.Fullname,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, email, phone_number, address, dob, fullname, password, created_at, updated_at
+FROM users
+WHERE username = $1
+`
+
+type GetUserByUsernameRow struct {
+	ID          int32
+	Username    string
+	Email       string
+	PhoneNumber string
+	Address     string
+	Dob         pgtype.Date
+	Fullname    string
+	Password    string
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
+	var i GetUserByUsernameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PhoneNumber,
+		&i.Address,
+		&i.Dob,
+		&i.Fullname,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

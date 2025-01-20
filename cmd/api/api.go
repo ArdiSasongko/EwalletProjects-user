@@ -15,6 +15,7 @@ type Config struct {
 	addr   string
 	logger *logrus.Logger
 	db     DBConfig
+	auth   AuthConfig
 }
 
 type DBConfig struct {
@@ -22,6 +23,12 @@ type DBConfig struct {
 	maxOpenConns int
 	maxIdleConns int
 	maxIdleTime  string
+}
+
+type AuthConfig struct {
+	secret string
+	iss    string
+	aud    string
 }
 
 func (app *application) mount() *fiber.App {
@@ -33,6 +40,8 @@ func (app *application) mount() *fiber.App {
 	// authentication handler
 	auth := v1.Group("/authentication")
 	auth.Post("/register", app.handler.User.Register)
+	auth.Post("/login", app.handler.User.Login)
+	auth.Delete("/logout", app.handler.Middleware.AuthMiddleware, app.handler.User.Logout)
 	return r
 }
 

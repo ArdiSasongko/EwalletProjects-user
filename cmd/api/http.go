@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/config/db"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/config/logger"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/env"
@@ -29,8 +30,14 @@ func SetupHTTP() {
 			maxIdleConns: env.GetEnvInt("DB_MAX_IDLE", 5),
 			maxIdleTime:  env.GetEnvString("DB_MAX_TIME_IDLE", "10m"),
 		},
+		auth: AuthConfig{
+			secret: env.GetEnvString("JWT_SECRET", ""),
+			iss:    env.GetEnvString("JWT_ISS", ""),
+			aud:    env.GetEnvString("JWT_AUD", ""),
+		},
 	}
 
+	// connection to database
 	conn, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -48,7 +55,14 @@ func SetupHTTP() {
 
 	cfg.logger.Info("success connected to database")
 
-	handler := handler.NewHandler(conn)
+	// auth jwt
+	auth := auth.NewJwt(
+		cfg.auth.secret,
+		cfg.auth.aud,
+		cfg.auth.iss,
+	)
+
+	handler := handler.NewHandler(conn, auth)
 
 	app := application{
 		config:  cfg,
