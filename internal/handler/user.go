@@ -34,7 +34,8 @@ func (h *UserHandler) Register(ctx *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.s.User.InsertUser(ctx.Context(), *payload); err != nil {
+	resp, err := h.s.User.InsertUser(ctx.Context(), *payload)
+	if err != nil {
 		log.WithError(err).Errorf("intenal server error, method: %v, path: %v", ctx.Method(), ctx.Path())
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -43,6 +44,7 @@ func (h *UserHandler) Register(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "created",
+		"data":    resp,
 	})
 }
 

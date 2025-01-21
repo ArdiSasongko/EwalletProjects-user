@@ -12,3 +12,7 @@ WHERE id = $1;
 SELECT id, username, email, phone_number, address, dob, fullname, password, created_at, updated_at
 FROM users
 WHERE username = $1;
+
+-- name: DeleteUserByID :exec
+DELETE FROM users
+WHERE id = $1;
