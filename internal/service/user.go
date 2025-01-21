@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/external/wallet"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/model"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/storage/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -13,21 +14,22 @@ import (
 )
 
 type UserService struct {
-	q    *sqlc.Queries
-	auth auth.Authenticator
+	q      *sqlc.Queries
+	auth   auth.Authenticator
+	wallet wallet.WalletClient
 }
 
-func (s *UserService) InsertUser(ctx context.Context, payload model.UserPayload) error {
+func (s *UserService) InsertUser(ctx context.Context, payload model.UserPayload) (wallet.WalletResponse, error) {
 	const layout = "2006-01-02"
 
 	parseDate, err := time.Parse(layout, payload.DoB)
 	if err != nil {
-		return fmt.Errorf("failed to parse data :%v", err)
+		return wallet.WalletResponse{}, fmt.Errorf("failed to parse data :%v", err)
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return wallet.WalletResponse{}, err
 	}
 
 	user := sqlc.InsertUserParams{
@@ -43,12 +45,20 @@ func (s *UserService) InsertUser(ctx context.Context, payload model.UserPayload)
 		Password: string(password),
 	}
 
-	_, err = s.q.InsertUser(ctx, user)
+	id, err := s.q.InsertUser(ctx, user)
 	if err != nil {
-		return err
+		return wallet.WalletResponse{}, err
 	}
 
-	return nil
+	respWallet, err := s.wallet.CreateWallet(ctx, id)
+	if err != nil {
+		if err := s.q.DeleteUserByID(ctx, id); err != nil {
+			return wallet.WalletResponse{}, err
+		}
+		return wallet.WalletResponse{}, err
+	}
+
+	return *respWallet, nil
 }
 
 func (s *UserService) GetUser(ctx context.Context, payload model.UserLoginPayload) (*model.LoginResponse, error) {
