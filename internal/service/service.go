@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/external"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/external/wallet"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/model"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/storage/sqlc"
@@ -22,11 +23,13 @@ type Service struct {
 func NewService(db sqlc.DBTX, auth auth.Authenticator) Service {
 	q := sqlc.New(db)
 	walletClient := wallet.NewWalletClient()
+	notif := external.NewNotification()
 	return Service{
 		User: &UserService{
 			q:      q,
 			auth:   auth,
 			wallet: walletClient,
+			notif:  notif,
 		},
 	}
 }
