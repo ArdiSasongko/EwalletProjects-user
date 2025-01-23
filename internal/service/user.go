@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
+	"github.com/ArdiSasongko/EwalletProjects-user/internal/external"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/external/wallet"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/model"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/storage/sqlc"
@@ -17,6 +18,7 @@ type UserService struct {
 	q      *sqlc.Queries
 	auth   auth.Authenticator
 	wallet wallet.WalletClient
+	notif  external.Notification
 }
 
 func (s *UserService) InsertUser(ctx context.Context, payload model.UserPayload) (wallet.WalletResponse, error) {
@@ -55,6 +57,16 @@ func (s *UserService) InsertUser(ctx context.Context, payload model.UserPayload)
 		if err := s.q.DeleteUserByID(ctx, id); err != nil {
 			return wallet.WalletResponse{}, err
 		}
+		return wallet.WalletResponse{}, err
+	}
+
+	if err := s.notif.SendNotification(ctx, external.NotifRequest{
+		Recipient:    payload.Email,
+		TemplateName: "register",
+		Placeholder: map[string]string{
+			"fullname": payload.Fullname,
+		},
+	}); err != nil {
 		return wallet.WalletResponse{}, err
 	}
 
