@@ -8,6 +8,7 @@ import (
 
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/auth"
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/proto/token"
+
 	"github.com/ArdiSasongko/EwalletProjects-user/internal/storage/sqlc"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -58,10 +59,18 @@ func (s *TokenService) Validate(ctx context.Context, req *token.TokenRequest) (*
 		}, nil
 	}
 
+	user, err := s.db.GetUserByID(ctx, int32(userID))
+	if err != nil {
+		return &token.TokenResponse{
+			Message: err.Error(),
+		}, nil
+	}
+
 	return &token.TokenResponse{
 		Message: "Token Valid",
 		Data: &token.UserData{
-			Id: int32(userID),
+			Id:    int32(userID),
+			Email: user.Email,
 		},
 	}, nil
 }
